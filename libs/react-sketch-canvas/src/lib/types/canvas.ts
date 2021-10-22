@@ -1,3 +1,6 @@
+import { ReactSketchCanvasMode } from '../ReactSketchCanvas';
+
+
 export type ExportImageType = "jpeg" | "png";
 
 export interface Point {
@@ -9,7 +12,13 @@ export interface CanvasPath {
   readonly paths: Point[];
   readonly strokeWidth: number;
   readonly strokeColor: string;
-  readonly drawMode: boolean;
+  readonly drawMode: ReactSketchCanvasMode;
   readonly startTimestamp?: number;
   readonly endTimestamp?: number;
+}
+
+export interface CanvasText {
+  readonly text: string;
+  readonly position: Point;
+  readonly size: number;
 }

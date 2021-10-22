@@ -1,7 +1,7 @@
 import { produce } from 'immer';
 import * as React from 'react';
 import { Canvas } from '../Canvas';
-import { CanvasPath, ExportImageType, Point } from '../types';
+import { CanvasPath, CanvasText, ExportImageType, Point } from '../types';
 
 /* Default settings */
 
@@ -16,6 +16,7 @@ const defaultProps = {
   preserveBackgroundImageAspectRatio: 'none',
   strokeWidth: 4,
   eraserWidth: 8,
+  textSize: '1em',
   allowOnlyPointerType: 'all',
   style: {
     border: '0.0625rem solid #9c9c9c',
@@ -39,18 +40,27 @@ export type ReactSketchCanvasProps = {
   preserveBackgroundImageAspectRatio: string;
   strokeWidth: number;
   eraserWidth: number;
+  textSize: string;
   allowOnlyPointerType: string;
-  onUpdate: (updatedPaths: CanvasPath[]) => void;
+  onUpdate: (updatedPaths: CanvasPath[], updatedTexts: CanvasText[]) => void;
   style: React.CSSProperties;
   withTimestamp: boolean;
 };
 
+export enum ReactSketchCanvasMode {
+  none,
+  pen,
+  text,
+  eraser,
+}
+
 export type ReactSketchCanvasStates = {
-  drawMode: boolean;
+  drawMode: ReactSketchCanvasMode;
   isDrawing: boolean;
   resetStack: CanvasPath[];
   undoStack: CanvasPath[];
   currentPaths: CanvasPath[];
+  currentTexts: CanvasText[];
 };
 
 export class ReactSketchCanvas extends React.Component<
@@ -62,12 +72,13 @@ export class ReactSketchCanvas extends React.Component<
   svgCanvas: React.RefObject<Canvas>;
 
   initialState = {
-    drawMode: true,
+    drawMode: ReactSketchCanvasMode.none,
     isDrawing: false,
     // eslint-disable-next-line react/no-unused-state
     resetStack: [],
     undoStack: [],
     currentPaths: [],
+    currentTexts: [],
   };
 
   constructor(props: ReactSketchCanvasProps) {
@@ -84,16 +95,22 @@ export class ReactSketchCanvas extends React.Component<
     this.exportPaths = this.exportPaths.bind(this);
     this.loadPaths = this.loadPaths.bind(this);
 
-    this.eraseMode = this.eraseMode.bind(this);
+    this.setMode = this.setMode.bind(this);
     this.clearCanvas = this.clearCanvas.bind(this);
     this.undo = this.undo.bind(this);
     this.redo = this.redo.bind(this);
     this.resetCanvas = this.resetCanvas.bind(this);
     this.getSketchingTime = this.getSketchingTime.bind(this);
+    this.isDrawingMode = this.isDrawingMode.bind(this);
 
-    this.liftPathsUp = this.liftPathsUp.bind(this);
+    this.liftUpdatedStateUp = this.liftUpdatedStateUp.bind(this);
 
     this.svgCanvas = React.createRef();
+  }
+
+  isDrawingMode(): boolean {
+    const mode = this.state.drawMode;
+    return mode === ReactSketchCanvasMode.pen || mode === ReactSketchCanvasMode.eraser;
   }
 
   getSketchingTime(): Promise<number> {
@@ -127,17 +144,22 @@ export class ReactSketchCanvas extends React.Component<
     this.setState(this.initialState);
   }
 
-  liftPathsUp(): void {
-    const { currentPaths } = this.state;
+  liftUpdatedStateUp(): void {
+    const { currentPaths, currentTexts } = this.state;
     const { onUpdate } = this.props;
 
-    onUpdate(currentPaths);
+    onUpdate(currentPaths, currentTexts);
   }
 
   /* Mouse Handlers - Mouse down, move and up */
 
   handlePointerDown(point: Point): void {
     const { strokeColor, strokeWidth, eraserWidth, withTimestamp } = this.props;
+
+    if(!this.isDrawingMode()) {
+      // handle text label insertion
+      return
+    }
 
     this.setState(
       produce((draft: ReactSketchCanvasStates) => {
@@ -161,7 +183,7 @@ export class ReactSketchCanvas extends React.Component<
 
         draft.currentPaths.push(stroke);
       }),
-      this.liftPathsUp
+      this.liftUpdatedStateUp
     );
   }
 
@@ -175,7 +197,7 @@ export class ReactSketchCanvas extends React.Component<
         const currentStroke = draft.currentPaths[draft.currentPaths.length - 1];
         currentStroke.paths.push(point);
       }),
-      this.liftPathsUp
+      this.liftUpdatedStateUp
     );
   }
 
@@ -207,7 +229,7 @@ export class ReactSketchCanvas extends React.Component<
           draft.currentPaths.push(currentStroke);
         }
       }),
-      this.liftPathsUp
+      this.liftUpdatedStateUp
     );
   }
 
@@ -215,12 +237,12 @@ export class ReactSketchCanvas extends React.Component<
 
   /* Canvas operations */
 
-  eraseMode(erase: boolean): void {
+  setMode(mode: ReactSketchCanvasMode): void {
     this.setState(
       produce((draft: ReactSketchCanvasStates) => {
-        draft.drawMode = !erase;
+        draft.drawMode = mode;
       }),
-      this.liftPathsUp
+      this.liftUpdatedStateUp
     );
   }
 
@@ -229,8 +251,9 @@ export class ReactSketchCanvas extends React.Component<
       produce((draft: ReactSketchCanvasStates) => {
         draft.resetStack = draft.currentPaths;
         draft.currentPaths = [];
+        draft.currentTexts = [];
       }),
-      this.liftPathsUp
+      this.liftUpdatedStateUp
     );
   }
 
@@ -244,7 +267,7 @@ export class ReactSketchCanvas extends React.Component<
           draft.currentPaths = draft.resetStack;
           draft.resetStack = [];
         }),
-        this.liftPathsUp
+        this.liftUpdatedStateUp
       );
 
       return;
@@ -258,7 +281,7 @@ export class ReactSketchCanvas extends React.Component<
           draft.undoStack.push(lastSketchPath);
         }
       }),
-      this.liftPathsUp
+      this.liftUpdatedStateUp
     );
   }
 
@@ -276,7 +299,7 @@ export class ReactSketchCanvas extends React.Component<
           draft.currentPaths.push(lastUndoPath);
         }
       }),
-      this.liftPathsUp
+      this.liftUpdatedStateUp
     );
   }
 
@@ -328,7 +351,7 @@ export class ReactSketchCanvas extends React.Component<
       produce((draft: ReactSketchCanvasStates) => {
         draft.currentPaths = draft.currentPaths.concat(paths);
       }),
-      this.liftPathsUp
+      this.liftUpdatedStateUp
     );
   }
 
@@ -347,7 +370,7 @@ export class ReactSketchCanvas extends React.Component<
       allowOnlyPointerType,
     } = this.props;
 
-    const { currentPaths, isDrawing } = this.state;
+    const { currentPaths, currentTexts, isDrawing } = this.state;
 
     return (
       <Canvas
@@ -362,6 +385,7 @@ export class ReactSketchCanvas extends React.Component<
         allowOnlyPointerType={allowOnlyPointerType}
         style={style}
         paths={currentPaths}
+        texts={currentTexts}
         isDrawing={isDrawing}
         onPointerDown={this.handlePointerDown}
         onPointerMove={this.handlePointerMove}

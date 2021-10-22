@@ -1,6 +1,7 @@
 import * as React from 'react';
 import Paths from '../Paths';
-import { CanvasPath, ExportImageType, Point } from '../types';
+import { ReactSketchCanvasMode } from '../ReactSketchCanvas';
+import { CanvasPath, CanvasText, ExportImageType, Point } from '../types';
 
 /* Default settings */
 
@@ -23,7 +24,7 @@ const defaultProps = {
 const partitionPenAndEraser = (paths: CanvasPath[]) =>
   paths.reduce<[CanvasPath[], CanvasPath[]]>(
     (partition, path) => {
-      partition[+path.drawMode].push(path);
+      partition[+(path.drawMode === ReactSketchCanvasMode.pen)].push(path);
       return partition;
     },
     [[], []]
@@ -55,6 +56,7 @@ function getCanvasWithViewBox(canvas: HTMLDivElement) {
 
 export type CanvasProps = {
   paths: CanvasPath[];
+  texts: CanvasText[];
   isDrawing: boolean;
   className: string;
   onPointerDown: (point: Point) => void;

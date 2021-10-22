@@ -3,7 +3,12 @@
 
 import { Meta, Story } from '@storybook/react';
 import * as React from 'react';
-import { CanvasPath, ReactSketchCanvas, ReactSketchCanvasProps } from '..';
+import {
+  CanvasPath,
+  ReactSketchCanvas,
+  ReactSketchCanvasMode,
+  ReactSketchCanvasProps
+} from '..';
 import './demo.stories.css';
 
 export default {
@@ -73,20 +78,37 @@ const Template: Story<ReactSketchCanvasProps> = ({
   };
 
   const penHandler = () => {
-    const eraseMode = canvasRef.current?.eraseMode;
+    const setMode = canvasRef.current?.setMode;
 
-    if (eraseMode) {
-      eraseMode(false);
+    if (setMode) {
+      setMode(ReactSketchCanvasMode.pen);
+    }
+  };
+
+  const textHandler = () => {
+    const setMode = canvasRef.current?.setMode;
+
+    if (setMode) {
+      setMode(ReactSketchCanvasMode.text);
     }
   };
 
   const eraserHandler = () => {
-    const eraseMode = canvasRef.current?.eraseMode;
+    const setMode = canvasRef.current?.setMode;
 
-    if (eraseMode) {
-      eraseMode(true);
+    if (setMode) {
+      setMode(ReactSketchCanvasMode.eraser);
     }
   };
+
+  const disableHandler = () => {
+    const setMode = canvasRef.current?.setMode;
+
+    if (setMode) {
+      setMode(ReactSketchCanvasMode.none);
+    }
+  };
+
 
   const undoHandler = () => {
     const undo = canvasRef.current?.undo;
@@ -141,7 +163,9 @@ const Template: Story<ReactSketchCanvasProps> = ({
     ['Clear All', clearHandler, 'primary'],
     ['Reset All', resetCanvasHandler, 'primary'],
     ['Pen', penHandler, 'secondary'],
+    ['Text', textHandler, 'secondary'],
     ['Eraser', eraserHandler, 'secondary'],
+    ['Disable', disableHandler, 'secondary'],
     ['Export Image', imageExportHandler, 'success'],
     ['Export SVG', svgExportHandler, 'success'],
     ['Get Sketching time', getSketchingTimeHandler, 'success'],
