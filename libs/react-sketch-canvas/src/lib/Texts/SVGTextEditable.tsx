@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
-import Draggable, { DraggableData, DraggableEvent } from 'react-draggable';
-import { useOnClickOutside } from 'react-sketch-canvas';
+import { DraggableCore, DraggableData, DraggableEvent } from 'react-draggable';
+import { useOnClickOutside } from '../hooks';
 import { CanvasText } from '../types/canvas';
 
 
@@ -29,6 +29,7 @@ export default function SVGTextEditable({
     x: 0,
     y: 0
   });
+  const [rectOffset, setRectOffset] = useState({ x: 0, y: 0 });
 
   const inputRef = useRef<HTMLInputElement>(null);
   useOnClickOutside(inputRef, () => {
@@ -74,8 +75,22 @@ export default function SVGTextEditable({
     setCurrentText(text.text);
   };
 
-  const isDragging = () => {
-    setWasDragged(true);
+  const onDragStart = (e: DraggableEvent, data: DraggableData): void | false => {
+    setRectOffset({
+      x: data.x - text.position.x,
+      y: data.y - text.position.y
+    });
+  };
+
+  const isDragging = (e: DraggableEvent, data: DraggableData): void | false => {
+    if (!wasDragged) {
+      setWasDragged(true);
+    }
+    if (textRef.current) {
+      console.log(text.position, data);
+      textRef.current.setAttribute('x', (data.x - rectOffset.x).toString());
+      textRef.current.setAttribute('y', (data.y - rectOffset.y).toString());
+    }
   };
 
   const onDragStop = (e: DraggableEvent, data: DraggableData): void | false => {
@@ -85,9 +100,8 @@ export default function SVGTextEditable({
     if (!textRef.current) {
       return;
     }
-    const newX = parseFloat(textRef.current.getAttribute('x') || '0') + data.x;
-    const newY = parseFloat(textRef.current.getAttribute('y') || '0') + data.y;
-    textRef.current.removeAttribute('transform');
+    const newX = data.x - rectOffset.x;
+    const newY = data.y - rectOffset.y;
     if (onChange) {
       onChange(text, {
         ...text,
@@ -109,7 +123,6 @@ export default function SVGTextEditable({
       <input type='text'
              ref={inputRef}
              style={{
-               // border: '1px solid black',
                width: '100%',
                height: '100%',
                textAlign: 'center'
@@ -133,7 +146,7 @@ export default function SVGTextEditable({
     </foreignObject>;
   }
 
-  return <Draggable onDrag={isDragging} onStop={onDragStop}>
+  return <DraggableCore onStart={onDragStart} onDrag={isDragging} onStop={onDragStop}>
     <text
       x={text.position.x}
       y={text.position.y}
@@ -142,5 +155,5 @@ export default function SVGTextEditable({
     >
       {currentText}
     </text>
-  </Draggable>;
+  </DraggableCore>;
 }

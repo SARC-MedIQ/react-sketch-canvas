@@ -262,7 +262,6 @@ export class ReactSketchCanvas extends React.Component<ReactSketchCanvasProps,
         for (const idx in currentTexts) {
           if (currentTexts[idx].id === oldText.id) {
             currentTexts[idx] = newText;
-            // draft.currentTexts = currentTexts;
             break;
           }
         }
