@@ -1,4 +1,5 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
+import Draggable, { DraggableData, DraggableEvent } from 'react-draggable';
 import { useOnClickOutside } from 'react-sketch-canvas';
 import { CanvasText } from '../types/canvas';
 
@@ -20,6 +21,7 @@ export default function SVGTextEditable({
                                           onChange
                                         }: SVGTextEditableProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [wasDragged, setWasDragged] = useState(false);
   const [currentText, setCurrentText] = useState(text.text);
   const [textSize, setTextSize] = useState<Size>({
     height: 0,
@@ -38,6 +40,10 @@ export default function SVGTextEditable({
   const textRef = useRef<SVGTextElement>(null);
 
   const beginEditing = () => {
+    if (wasDragged) {
+      setWasDragged(false);
+      return;
+    }
     setIsEditing(true);
     if (textRef.current) {
       const size = textRef.current.getBBox();
@@ -66,6 +72,31 @@ export default function SVGTextEditable({
   const rollbackChanges = () => {
     setIsEditing(false);
     setCurrentText(text.text);
+  };
+
+  const isDragging = () => {
+    setWasDragged(true);
+  };
+
+  const onDragStop = (e: DraggableEvent, data: DraggableData): void | false => {
+    if (!wasDragged) {
+      return;
+    }
+    if (!textRef.current) {
+      return;
+    }
+    const newX = parseFloat(textRef.current.getAttribute('x') || '0') + data.x;
+    const newY = parseFloat(textRef.current.getAttribute('y') || '0') + data.y;
+    textRef.current.removeAttribute('transform');
+    if (onChange) {
+      onChange(text, {
+        ...text,
+        position: {
+          x: newX,
+          y: newY
+        }
+      });
+    }
   };
 
   if (isEditing) {
@@ -102,12 +133,14 @@ export default function SVGTextEditable({
     </foreignObject>;
   }
 
-  return <text
-    x={text.position.x}
-    y={text.position.y}
-    onClick={beginEditing}
-    ref={textRef}
-  >
-    {currentText}
-  </text>;
+  return <Draggable onDrag={isDragging} onStop={onDragStop}>
+    <text
+      x={text.position.x}
+      y={text.position.y}
+      onClick={beginEditing}
+      ref={textRef}
+    >
+      {currentText}
+    </text>
+  </Draggable>;
 }
