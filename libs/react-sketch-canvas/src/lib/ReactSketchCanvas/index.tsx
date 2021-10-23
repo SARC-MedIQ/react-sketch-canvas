@@ -1,7 +1,7 @@
 import { produce } from 'immer';
 import * as React from 'react';
 import { Canvas } from '../Canvas';
-import { CanvasPath, CanvasText, ExportImageType, Point } from '../types';
+import { CanvasPath, CanvasLabel, ExportImageType, Point } from '../types';
 
 /* Default settings */
 
@@ -42,7 +42,7 @@ export type ReactSketchCanvasProps = {
   eraserWidth: number;
   textSize: string;
   allowOnlyPointerType: string;
-  onUpdate: (updatedPaths: CanvasPath[], updatedTexts: CanvasText[]) => void;
+  onUpdate: (updatedPaths: CanvasPath[], updatedTexts: CanvasLabel[]) => void;
   style: React.CSSProperties;
   withTimestamp: boolean;
 };
@@ -60,7 +60,7 @@ export type ReactSketchCanvasStates = {
   resetStack: CanvasPath[];
   undoStack: CanvasPath[];
   currentPaths: CanvasPath[];
-  currentTexts: CanvasText[];
+  currentTexts: CanvasLabel[];
 };
 
 export class ReactSketchCanvas extends React.Component<
@@ -154,13 +154,29 @@ export class ReactSketchCanvas extends React.Component<
   /* Mouse Handlers - Mouse down, move and up */
 
   handlePointerDown(point: Point): void {
-    const { strokeColor, strokeWidth, eraserWidth, withTimestamp } = this.props;
-
     if(!this.isDrawingMode()) {
+      if (this.state.drawMode === ReactSketchCanvasMode.none) {
+        return;
+      }
       // handle text label insertion
+      this.setState(
+        produce((draft: ReactSketchCanvasStates) => {
+          draft.isDrawing = false;
+          draft.undoStack = [];
+
+          const textLabel: CanvasLabel = {
+            text: "Text",
+            position: point,
+            size: '1em',
+          }
+
+          draft.currentTexts.push(textLabel);
+        })
+      )
       return
     }
 
+    const { strokeColor, strokeWidth, eraserWidth, withTimestamp } = this.props;
     this.setState(
       produce((draft: ReactSketchCanvasStates) => {
         draft.isDrawing = true;

@@ -1,7 +1,7 @@
 import * as React from 'react';
 import Paths from '../Paths';
 import { ReactSketchCanvasMode } from '../ReactSketchCanvas';
-import { CanvasPath, CanvasText, ExportImageType, Point } from '../types';
+import { CanvasPath, CanvasLabel, ExportImageType, Point } from '../types';
 
 /* Default settings */
 
@@ -56,7 +56,7 @@ function getCanvasWithViewBox(canvas: HTMLDivElement) {
 
 export type CanvasProps = {
   paths: CanvasPath[];
-  texts: CanvasText[];
+  texts: CanvasLabel[];
   isDrawing: boolean;
   className: string;
   onPointerDown: (point: Point) => void;
@@ -267,6 +267,7 @@ export class Canvas extends React.Component<CanvasProps> {
       backgroundImage,
       style,
       paths,
+      texts,
       preserveBackgroundImageAspectRatio,
     } = this.props;
 
@@ -336,6 +337,11 @@ export class Canvas extends React.Component<CanvasProps> {
           </g>
           <g id="canvas-pen-paths" mask="url(#eraser)">
             <Paths paths={penPaths} />
+          </g>
+          <g id="canvas-texts">
+            {texts.map((text, id) => {
+              return <text key={id.toString()} x={text.position.x} y={text.position.y}>{text.text}</text>
+            })}
           </g>
         </svg>
       </div>
