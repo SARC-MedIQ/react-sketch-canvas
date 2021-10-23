@@ -17,8 +17,8 @@ export interface CanvasPath {
   readonly endTimestamp?: number;
 }
 
-export interface CanvasLabel {
+export interface CanvasText {
+  readonly id: number;
   readonly text: string;
   readonly position: Point;
-  readonly size: string;
 }

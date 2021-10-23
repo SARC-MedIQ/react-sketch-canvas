@@ -1,7 +1,8 @@
 import * as React from 'react';
 import Paths from '../Paths';
 import { ReactSketchCanvasMode } from '../ReactSketchCanvas';
-import { CanvasPath, CanvasLabel, ExportImageType, Point } from '../types';
+import { SVGTexts } from '../Texts';
+import { CanvasPath, CanvasText, ExportImageType, Point } from '../types';
 
 /* Default settings */
 
@@ -56,12 +57,13 @@ function getCanvasWithViewBox(canvas: HTMLDivElement) {
 
 export type CanvasProps = {
   paths: CanvasPath[];
-  texts: CanvasLabel[];
+  texts: CanvasText[];
   isDrawing: boolean;
   className: string;
   onPointerDown: (point: Point) => void;
   onPointerMove: (point: Point) => void;
   onPointerUp: () => void;
+  onTextChange: (oldText: CanvasText, newText: CanvasText) => void;
   width: string;
   height: string;
   canvasColor: string;
@@ -269,6 +271,7 @@ export class Canvas extends React.Component<CanvasProps> {
       paths,
       texts,
       preserveBackgroundImageAspectRatio,
+      onTextChange,
     } = this.props;
 
     const [eraserPaths, penPaths] = partitionPenAndEraser(paths);
@@ -316,7 +319,7 @@ export class Canvas extends React.Component<CanvasProps> {
                   height="100%"
                   xlinkHref={backgroundImage}
                   preserveAspectRatio={preserveBackgroundImageAspectRatio}
-                ></image>
+                />
               </pattern>
             )}
 
@@ -339,9 +342,7 @@ export class Canvas extends React.Component<CanvasProps> {
             <Paths paths={penPaths} />
           </g>
           <g id="canvas-texts">
-            {texts.map((text, id) => {
-              return <text key={id.toString()} x={text.position.x} y={text.position.y}>{text.text}</text>
-            })}
+            <SVGTexts texts={texts} onChange={onTextChange}/>
           </g>
         </svg>
       </div>

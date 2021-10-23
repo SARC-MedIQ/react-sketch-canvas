@@ -1,7 +1,7 @@
 import { produce } from 'immer';
 import * as React from 'react';
 import { Canvas } from '../Canvas';
-import { CanvasPath, CanvasLabel, ExportImageType, Point } from '../types';
+import { CanvasPath, CanvasText, ExportImageType, Point } from '../types';
 
 /* Default settings */
 
@@ -20,11 +20,11 @@ const defaultProps = {
   allowOnlyPointerType: 'all',
   style: {
     border: '0.0625rem solid #9c9c9c',
-    borderRadius: '0.25rem',
+    borderRadius: '0.25rem'
   },
   // eslint-disable-next-line @typescript-eslint/no-empty-function
-  onUpdate: (_: CanvasPath[]): void => {},
-  withTimestamp: false,
+  onUpdate: (paths: CanvasPath[], texts: CanvasText[]): void => {},
+  withTimestamp: false
 };
 
 /* Props validation */
@@ -42,7 +42,7 @@ export type ReactSketchCanvasProps = {
   eraserWidth: number;
   textSize: string;
   allowOnlyPointerType: string;
-  onUpdate: (updatedPaths: CanvasPath[], updatedTexts: CanvasLabel[]) => void;
+  onUpdate: (updatedPaths: CanvasPath[], updatedTexts: CanvasText[]) => void;
   style: React.CSSProperties;
   withTimestamp: boolean;
 };
@@ -60,13 +60,11 @@ export type ReactSketchCanvasStates = {
   resetStack: CanvasPath[];
   undoStack: CanvasPath[];
   currentPaths: CanvasPath[];
-  currentTexts: CanvasLabel[];
+  currentTexts: CanvasText[];
 };
 
-export class ReactSketchCanvas extends React.Component<
-  ReactSketchCanvasProps,
-  ReactSketchCanvasStates
-> {
+export class ReactSketchCanvas extends React.Component<ReactSketchCanvasProps,
+  ReactSketchCanvasStates> {
   static defaultProps = defaultProps;
 
   svgCanvas: React.RefObject<Canvas>;
@@ -78,7 +76,7 @@ export class ReactSketchCanvas extends React.Component<
     resetStack: [],
     undoStack: [],
     currentPaths: [],
-    currentTexts: [],
+    currentTexts: []
   };
 
   constructor(props: ReactSketchCanvasProps) {
@@ -89,6 +87,7 @@ export class ReactSketchCanvas extends React.Component<
     this.handlePointerDown = this.handlePointerDown.bind(this);
     this.handlePointerMove = this.handlePointerMove.bind(this);
     this.handlePointerUp = this.handlePointerUp.bind(this);
+    this.handleTextChange = this.handleTextChange.bind(this);
 
     this.exportImage = this.exportImage.bind(this);
     this.exportSvg = this.exportSvg.bind(this);
@@ -119,7 +118,7 @@ export class ReactSketchCanvas extends React.Component<
 
     return new Promise<number>((resolve, reject) => {
       if (!withTimestamp) {
-        reject(new Error("Set 'withTimestamp' prop to get sketching time"));
+        reject(new Error('Set \'withTimestamp\' prop to get sketching time'));
       }
 
       try {
@@ -154,7 +153,7 @@ export class ReactSketchCanvas extends React.Component<
   /* Mouse Handlers - Mouse down, move and up */
 
   handlePointerDown(point: Point): void {
-    if(!this.isDrawingMode()) {
+    if (!this.isDrawingMode()) {
       if (this.state.drawMode === ReactSketchCanvasMode.none) {
         return;
       }
@@ -163,20 +162,27 @@ export class ReactSketchCanvas extends React.Component<
         produce((draft: ReactSketchCanvasStates) => {
           draft.isDrawing = false;
           draft.undoStack = [];
+          draft.drawMode = ReactSketchCanvasMode.none;
 
-          const textLabel: CanvasLabel = {
-            text: "Text",
-            position: point,
-            size: '1em',
-          }
+          const textLabel: CanvasText = {
+            id: Math.round((new Date()).getTime()),
+            text: 'Text',
+            position: point
+          };
 
           draft.currentTexts.push(textLabel);
-        })
-      )
-      return
+        }),
+        this.liftUpdatedStateUp
+      );
+      return;
     }
 
-    const { strokeColor, strokeWidth, eraserWidth, withTimestamp } = this.props;
+    const {
+      strokeColor,
+      strokeWidth,
+      eraserWidth,
+      withTimestamp
+    } = this.props;
     this.setState(
       produce((draft: ReactSketchCanvasStates) => {
         draft.isDrawing = true;
@@ -186,14 +192,14 @@ export class ReactSketchCanvas extends React.Component<
           drawMode: draft.drawMode,
           strokeColor: draft.drawMode ? strokeColor : '#000000', // Eraser using mask
           strokeWidth: draft.drawMode ? strokeWidth : eraserWidth,
-          paths: [point],
+          paths: [point]
         };
 
         if (withTimestamp) {
           stroke = {
             ...stroke,
             startTimestamp: Date.now(),
-            endTimestamp: 0,
+            endTimestamp: 0
           };
         }
 
@@ -239,7 +245,7 @@ export class ReactSketchCanvas extends React.Component<
         if (currentStroke) {
           currentStroke = {
             ...currentStroke,
-            endTimestamp: Date.now(),
+            endTimestamp: Date.now()
           };
 
           draft.currentPaths.push(currentStroke);
@@ -247,6 +253,23 @@ export class ReactSketchCanvas extends React.Component<
       }),
       this.liftUpdatedStateUp
     );
+  }
+
+  handleTextChange(oldText: CanvasText, newText: CanvasText): void {
+    this.setState(
+      produce((draft: ReactSketchCanvasStates) => {
+        const { currentTexts } = draft;
+        for (const idx in currentTexts) {
+          if (currentTexts[idx].id === oldText.id) {
+            currentTexts[idx] = newText;
+            // draft.currentTexts = currentTexts;
+            break;
+          }
+        }
+      }),
+      this.liftUpdatedStateUp
+    );
+
   }
 
   /* Mouse Handlers ends */
@@ -383,7 +406,7 @@ export class ReactSketchCanvas extends React.Component<
       preserveBackgroundImageAspectRatio,
       exportWithBackgroundImage,
       style,
-      allowOnlyPointerType,
+      allowOnlyPointerType
     } = this.props;
 
     const { currentPaths, currentTexts, isDrawing } = this.state;
@@ -406,6 +429,7 @@ export class ReactSketchCanvas extends React.Component<
         onPointerDown={this.handlePointerDown}
         onPointerMove={this.handlePointerMove}
         onPointerUp={this.handlePointerUp}
+        onTextChange={this.handleTextChange}
       />
     );
   }

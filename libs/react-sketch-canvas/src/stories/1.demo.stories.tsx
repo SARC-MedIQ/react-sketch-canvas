@@ -4,6 +4,7 @@
 import { Meta, Story } from '@storybook/react';
 import * as React from 'react';
 import {
+  CanvasText,
   CanvasPath,
   ReactSketchCanvas,
   ReactSketchCanvasMode,
@@ -48,6 +49,7 @@ const Template: Story<ReactSketchCanvasProps> = ({
   const [dataURI, setDataURI] = React.useState<string>('');
   const [svg, setSVG] = React.useState<string>('');
   const [paths, setPaths] = React.useState<CanvasPath[]>([]);
+  const [texts, setTexts] = React.useState<CanvasText[]>([]);
   const [sketchingTime, setSketchingTime] = React.useState<number>(0);
 
   const imageExportHandler = async () => {
@@ -171,8 +173,9 @@ const Template: Story<ReactSketchCanvasProps> = ({
     ['Get Sketching time', getSketchingTimeHandler, 'success'],
   ];
 
-  const onUpdate = (updatedPaths: CanvasPath[]): void => {
+  const onUpdate = (updatedPaths: CanvasPath[], updatedTexts: CanvasText[]): void => {
     setPaths(updatedPaths);
+    setTexts(updatedTexts);
   };
 
   return (
@@ -226,7 +229,23 @@ const Template: Story<ReactSketchCanvasProps> = ({
               }
             />
           </div>
-          <div className="col-5 offset-2">
+          <div className="col-5 row form-group">
+            <label className="col-12" htmlFor="dataTextURI">
+              Texts
+            </label>
+            <textarea
+              id="dataTextURI"
+              className="dataURICode col-12"
+              readOnly
+              rows={10}
+              value={
+                texts.length !== 0
+                  ? JSON.stringify(texts)
+                  : 'Sketch to get texts'
+              }
+            />
+          </div>
+          <div className="col-2">
             <label className="col-12" htmlFor="dataURI">
               Sketching time
             </label>
