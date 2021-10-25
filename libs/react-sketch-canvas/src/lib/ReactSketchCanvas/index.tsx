@@ -1,7 +1,13 @@
 import { produce } from 'immer';
 import * as React from 'react';
 import { Canvas } from '../Canvas';
-import { CanvasPath, CanvasText, ExportImageType, Point } from '../types';
+import {
+  CanvasMode,
+  CanvasPath,
+  CanvasText,
+  ExportImageType,
+  Point
+} from '../types';
 
 /* Default settings */
 
@@ -47,15 +53,8 @@ export type ReactSketchCanvasProps = {
   withTimestamp: boolean;
 };
 
-export enum ReactSketchCanvasMode {
-  none,
-  pen,
-  text,
-  eraser,
-}
-
 export type ReactSketchCanvasStates = {
-  drawMode: ReactSketchCanvasMode;
+  drawMode: CanvasMode;
   isDrawing: boolean;
   resetStack: CanvasPath[];
   undoStack: CanvasPath[];
@@ -70,7 +69,7 @@ export class ReactSketchCanvas extends React.Component<ReactSketchCanvasProps,
   svgCanvas: React.RefObject<Canvas>;
 
   initialState = {
-    drawMode: ReactSketchCanvasMode.none,
+    drawMode: CanvasMode.none,
     isDrawing: false,
     // eslint-disable-next-line react/no-unused-state
     resetStack: [],
@@ -109,7 +108,7 @@ export class ReactSketchCanvas extends React.Component<ReactSketchCanvasProps,
 
   isDrawingMode(): boolean {
     const mode = this.state.drawMode;
-    return mode === ReactSketchCanvasMode.pen || mode === ReactSketchCanvasMode.eraser;
+    return mode === CanvasMode.pen || mode === CanvasMode.eraser;
   }
 
   getSketchingTime(): Promise<number> {
@@ -154,7 +153,7 @@ export class ReactSketchCanvas extends React.Component<ReactSketchCanvasProps,
 
   handlePointerDown(point: Point): void {
     if (!this.isDrawingMode()) {
-      if (this.state.drawMode === ReactSketchCanvasMode.none) {
+      if (this.state.drawMode === CanvasMode.none) {
         return;
       }
       // handle text label insertion
@@ -162,7 +161,7 @@ export class ReactSketchCanvas extends React.Component<ReactSketchCanvasProps,
         produce((draft: ReactSketchCanvasStates) => {
           draft.isDrawing = false;
           draft.undoStack = [];
-          draft.drawMode = ReactSketchCanvasMode.none;
+          draft.drawMode = CanvasMode.none;
 
           const textLabel: CanvasText = {
             id: Math.round((new Date()).getTime()),
@@ -275,7 +274,7 @@ export class ReactSketchCanvas extends React.Component<ReactSketchCanvasProps,
 
   /* Canvas operations */
 
-  setMode(mode: ReactSketchCanvasMode): void {
+  setMode(mode: CanvasMode): void {
     this.setState(
       produce((draft: ReactSketchCanvasStates) => {
         draft.drawMode = mode;
@@ -384,10 +383,31 @@ export class ReactSketchCanvas extends React.Component<ReactSketchCanvasProps,
     });
   }
 
+  exportTexts(): Promise<CanvasText[]> {
+    const { currentTexts } = this.state;
+
+    return new Promise<CanvasText[]>((resolve, reject) => {
+      try {
+        resolve(currentTexts);
+      } catch (e) {
+        reject(e);
+      }
+    });
+  }
+
   loadPaths(paths: CanvasPath[]): void {
     this.setState(
       produce((draft: ReactSketchCanvasStates) => {
         draft.currentPaths = draft.currentPaths.concat(paths);
+      }),
+      this.liftUpdatedStateUp
+    );
+  }
+
+  loadTexts(texts: CanvasText[]): void {
+    this.setState(
+      produce((draft: ReactSketchCanvasStates) => {
+        draft.currentTexts = draft.currentTexts.concat(texts);
       }),
       this.liftUpdatedStateUp
     );

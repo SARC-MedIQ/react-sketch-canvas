@@ -1,8 +1,13 @@
 import * as React from 'react';
 import Paths from '../Paths';
-import { ReactSketchCanvasMode } from '../ReactSketchCanvas';
 import { SVGTexts } from '../Texts';
-import { CanvasPath, CanvasText, ExportImageType, Point } from '../types';
+import {
+  CanvasMode,
+  CanvasPath,
+  CanvasText,
+  ExportImageType,
+  Point
+} from '../types';
 
 /* Default settings */
 
@@ -25,7 +30,7 @@ const defaultProps = {
 const partitionPenAndEraser = (paths: CanvasPath[]) =>
   paths.reduce<[CanvasPath[], CanvasPath[]]>(
     (partition, path) => {
-      partition[+(path.drawMode === ReactSketchCanvasMode.pen)].push(path);
+      partition[+(path.drawMode === CanvasMode.pen)].push(path);
       return partition;
     },
     [[], []]

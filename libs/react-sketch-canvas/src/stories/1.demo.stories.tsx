@@ -7,8 +7,7 @@ import {
   CanvasText,
   CanvasPath,
   ReactSketchCanvas,
-  ReactSketchCanvasMode,
-  ReactSketchCanvasProps
+  ReactSketchCanvasProps, CanvasMode
 } from '..';
 import './demo.stories.css';
 
@@ -83,7 +82,7 @@ const Template: Story<ReactSketchCanvasProps> = ({
     const setMode = canvasRef.current?.setMode;
 
     if (setMode) {
-      setMode(ReactSketchCanvasMode.pen);
+      setMode(CanvasMode.pen);
     }
   };
 
@@ -91,7 +90,7 @@ const Template: Story<ReactSketchCanvasProps> = ({
     const setMode = canvasRef.current?.setMode;
 
     if (setMode) {
-      setMode(ReactSketchCanvasMode.text);
+      setMode(CanvasMode.text);
     }
   };
 
@@ -99,7 +98,7 @@ const Template: Story<ReactSketchCanvasProps> = ({
     const setMode = canvasRef.current?.setMode;
 
     if (setMode) {
-      setMode(ReactSketchCanvasMode.eraser);
+      setMode(CanvasMode.eraser);
     }
   };
 
@@ -107,7 +106,7 @@ const Template: Story<ReactSketchCanvasProps> = ({
     const setMode = canvasRef.current?.setMode;
 
     if (setMode) {
-      setMode(ReactSketchCanvasMode.none);
+      setMode(CanvasMode.none);
     }
   };
 
