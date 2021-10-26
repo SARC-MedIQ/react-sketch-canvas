@@ -6,7 +6,8 @@ import {
   CanvasPath,
   CanvasText,
   ExportImageType,
-  Point
+  Point,
+  UniqueId
 } from '../types';
 
 /* Default settings */
@@ -22,9 +23,9 @@ const defaultProps = {
   allowOnlyPointerType: 'all',
   style: {
     border: '0.0625rem solid #9c9c9c',
-    borderRadius: '0.25rem',
+    borderRadius: '0.25rem'
   },
-  withTimeStamp: true,
+  withTimeStamp: true
 };
 
 const partitionPenAndEraser = (paths: CanvasPath[]) =>
@@ -81,11 +82,14 @@ export type CanvasProps = {
 
 export class Canvas extends React.Component<CanvasProps> {
   canvas: React.RefObject<HTMLDivElement>;
+  uniqueId: UniqueId;
 
   static defaultProps = defaultProps;
 
   constructor(props: CanvasProps) {
     super(props);
+
+    this.uniqueId = new UniqueId(6);
 
     this.handlePointerDown = this.handlePointerDown.bind(this);
     this.handlePointerMove = this.handlePointerMove.bind(this);
@@ -120,7 +124,7 @@ export class Canvas extends React.Component<CanvasProps> {
 
     const point: Point = {
       x: pointerEvent.pageX - boundingArea.left - scrollLeft,
-      y: pointerEvent.pageY - boundingArea.top - scrollTop,
+      y: pointerEvent.pageY - boundingArea.top - scrollTop
     };
 
     return point;
@@ -248,9 +252,9 @@ export class Canvas extends React.Component<CanvasProps> {
             return;
           }
 
-          svgCanvas.querySelector('#background')?.remove();
+          svgCanvas.querySelector('#' + this.uniqueId.get('background'))?.remove();
           svgCanvas
-            .querySelector('#canvas-background')
+            .querySelector('#' + this.uniqueId.get('canvas-background'))
             ?.setAttribute('fill', canvasColor);
 
           resolve(svgCanvas.outerHTML);
@@ -276,78 +280,78 @@ export class Canvas extends React.Component<CanvasProps> {
       paths,
       texts,
       preserveBackgroundImageAspectRatio,
-      onTextChange,
+      onTextChange
     } = this.props;
 
     const [eraserPaths, penPaths] = partitionPenAndEraser(paths);
 
     return (
       <div
-        role="presentation"
+        role='presentation'
         ref={this.canvas}
         className={className}
         style={{
           touchAction: 'none',
           width,
           height,
-          ...style,
+          ...style
         }}
-        touch-action="none"
+        touch-action='none'
         onPointerDown={this.handlePointerDown}
         onPointerMove={this.handlePointerMove}
         onPointerUp={this.handlePointerUp}
       >
         <svg
-          version="1.1"
-          baseProfile="full"
-          xmlns="http://www.w3.org/2000/svg"
-          xmlnsXlink="http://www.w3.org/1999/xlink"
+          version='1.1'
+          baseProfile='full'
+          xmlns='http://www.w3.org/2000/svg'
+          xmlnsXlink='http://www.w3.org/1999/xlink'
           style={{
             width: '100%',
-            height: '100%',
+            height: '100%'
           }}
         >
           <defs>
             {backgroundImage && (
               <pattern
-                id="background"
-                x="0"
-                y="0"
-                width="100%"
-                height="100%"
-                patternUnits="userSpaceOnUse"
+                id={this.uniqueId.get('background')}
+                x='0'
+                y='0'
+                width='100%'
+                height='100%'
+                patternUnits='userSpaceOnUse'
               >
                 <image
-                  x="0"
-                  y="0"
-                  width="100%"
-                  height="100%"
+                  x='0'
+                  y='0'
+                  width='100%'
+                  height='100%'
                   xlinkHref={backgroundImage}
                   preserveAspectRatio={preserveBackgroundImageAspectRatio}
                 />
               </pattern>
             )}
 
-            <mask id="eraser">
-              <rect x="0" y="0" width="100%" height="100%" fill="white" />
+            <mask id={this.uniqueId.get('eraser')}>
+              <rect x='0' y='0' width='100%' height='100%' fill='white' />
               <Paths paths={eraserPaths} />
             </mask>
           </defs>
-          <g id="canvas-background-group">
+          <g id={this.uniqueId.get('canvas-background-group')}>
             <rect
-              id="canvas-background"
-              x="0"
-              y="0"
-              width="100%"
-              height="100%"
-              fill={backgroundImage ? 'url(#background)' : canvasColor}
+              id={this.uniqueId.get('canvas-background')}
+              x='0'
+              y='0'
+              width='100%'
+              height='100%'
+              fill={backgroundImage ? `url(#${this.uniqueId.get('background')})` : canvasColor}
             />
           </g>
-          <g id="canvas-pen-paths" mask="url(#eraser)">
+          <g id={this.uniqueId.get('canvas-pen-paths')} mask={`url(#${this.uniqueId.get('eraser')})`}>
             <Paths paths={penPaths} />
           </g>
-          <g id="canvas-texts">
-            <SVGTexts texts={texts} onChange={onTextChange}/>
+          <g id={this.uniqueId.get('canvas-texts')}>
+            <SVGTexts texts={texts} onChange={onTextChange} />
           </g>
         </svg>
       </div>
