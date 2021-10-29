@@ -7,6 +7,7 @@ import { CanvasText } from '../types/canvas';
 export interface SVGTextEditableProps {
   text: CanvasText;
   onChange?: (oldText: CanvasText, newText: CanvasText) => void;
+  isDrawing? : boolean;
 }
 
 interface Size {
@@ -18,7 +19,8 @@ interface Size {
 
 export default function SVGTextEditable({
                                           text,
-                                          onChange
+                                          onChange,
+                                          isDrawing
                                         }: SVGTextEditableProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [wasDragged, setWasDragged] = useState(false);
@@ -146,7 +148,7 @@ export default function SVGTextEditable({
     </foreignObject>;
   }
 
-  return <DraggableCore onStart={onDragStart} onDrag={isDragging} onStop={onDragStop}>
+  return <DraggableCore onStart={onDragStart} onDrag={isDragging} onStop={onDragStop} disabled={isDrawing}>
     <text
       x={text.position.x}
       y={text.position.y}

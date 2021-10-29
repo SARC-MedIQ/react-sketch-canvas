@@ -133,6 +133,16 @@ export class Canvas extends React.Component<CanvasProps> {
   /* Mouse Handlers - Mouse down, move and up */
 
   handlePointerDown(event: React.PointerEvent<HTMLDivElement>): void {
+
+    // checks and return if click on some already added text element
+    const { isDrawing } = this.props;
+    if(!isDrawing) {
+      const targetElem : string = (event.target as HTMLElement).nodeName;
+      if(targetElem === "text" || targetElem === "INPUT") {
+        return;
+      }
+    }
+    
     // Allow only chosen pointer type
 
     const { allowOnlyPointerType, onPointerDown } = this.props;
@@ -280,6 +290,7 @@ export class Canvas extends React.Component<CanvasProps> {
       paths,
       texts,
       preserveBackgroundImageAspectRatio,
+      isDrawing,
       onTextChange
     } = this.props;
 
@@ -351,7 +362,7 @@ export class Canvas extends React.Component<CanvasProps> {
             <Paths paths={penPaths} />
           </g>
           <g id={this.uniqueId.get('canvas-texts')}>
-            <SVGTexts texts={texts} onChange={onTextChange} />
+            <SVGTexts texts={texts} isDrawing={isDrawing} onChange={onTextChange} />
           </g>
         </svg>
       </div>

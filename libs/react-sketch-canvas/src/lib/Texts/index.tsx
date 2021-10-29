@@ -6,12 +6,13 @@ import SVGTextEditable from './SVGTextEditable';
 interface SVGTextsProps {
   texts: CanvasText[];
   onChange?: (oldText: CanvasText, newText: CanvasText) => void;
+  isDrawing? : boolean
 }
 
-export const SVGTexts = ({ texts, onChange }: SVGTextsProps) => {
+export const SVGTexts = ({ texts, onChange, isDrawing }: SVGTextsProps) => {
   return <>{
     texts.map((text, id) => {
-      return <SVGTextEditable text={text} key={id.toString()} onChange={onChange}/>;
+      return <SVGTextEditable text={text} key={id.toString()} onChange={onChange} isDrawing={isDrawing} />;
     })
   }</>;
 };

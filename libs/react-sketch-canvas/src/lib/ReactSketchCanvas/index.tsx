@@ -153,6 +153,7 @@ export class ReactSketchCanvas extends React.Component<ReactSketchCanvasProps,
 
   handlePointerDown(point: Point): void {
     if (!this.isDrawingMode()) {
+      
       if (this.state.drawMode === CanvasMode.none) {
         return;
       }
@@ -161,7 +162,7 @@ export class ReactSketchCanvas extends React.Component<ReactSketchCanvasProps,
         produce((draft: ReactSketchCanvasStates) => {
           draft.isDrawing = false;
           draft.undoStack = [];
-          draft.drawMode = CanvasMode.none;
+          // draft.drawMode = CanvasMode.none;
 
           const textLabel: CanvasText = {
             id: Math.round((new Date()).getTime()),
@@ -174,6 +175,7 @@ export class ReactSketchCanvas extends React.Component<ReactSketchCanvasProps,
         this.liftUpdatedStateUp
       );
       return;
+
     }
 
     const {
@@ -206,6 +208,7 @@ export class ReactSketchCanvas extends React.Component<ReactSketchCanvasProps,
       }),
       this.liftUpdatedStateUp
     );
+
   }
 
   handlePointerMove(point: Point): void {
