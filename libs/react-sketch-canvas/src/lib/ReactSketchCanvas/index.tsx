@@ -6,7 +6,8 @@ import {
   CanvasPath,
   CanvasText,
   ExportImageType,
-  Point
+  Point,
+  CanvasProportion
 } from '../types';
 
 /* Default settings */
@@ -30,7 +31,7 @@ const defaultProps = {
   },
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   onUpdate: (paths: CanvasPath[], texts: CanvasText[]): void => {},
-  withTimestamp: false
+  withTimestamp: false,
 };
 
 /* Props validation */
@@ -60,6 +61,7 @@ export type ReactSketchCanvasStates = {
   undoStack: CanvasPath[];
   currentPaths: CanvasPath[];
   currentTexts: CanvasText[];
+  imageScale: number;
 };
 
 export class ReactSketchCanvas extends React.Component<ReactSketchCanvasProps,
@@ -75,7 +77,8 @@ export class ReactSketchCanvas extends React.Component<ReactSketchCanvasProps,
     resetStack: [],
     undoStack: [],
     currentPaths: [],
-    currentTexts: []
+    currentTexts: [],
+    imageScale : 1,
   };
 
   constructor(props: ReactSketchCanvasProps) {
@@ -100,10 +103,30 @@ export class ReactSketchCanvas extends React.Component<ReactSketchCanvasProps,
     this.resetCanvas = this.resetCanvas.bind(this);
     this.getSketchingTime = this.getSketchingTime.bind(this);
     this.isDrawingMode = this.isDrawingMode.bind(this);
+    this.adjustProportion = this.adjustProportion.bind(this);
 
     this.liftUpdatedStateUp = this.liftUpdatedStateUp.bind(this);
 
     this.svgCanvas = React.createRef();
+
+  }
+
+  canonicalPathsToImage = (oldPaths: CanvasPath[], imScale:number) => {
+    const transformedPaths = JSON.parse(JSON.stringify(oldPaths));
+    for (let i=0; i < transformedPaths.length; i++) {
+        transformedPaths[i].paths = transformedPaths[i].paths.map( 
+            (pt:Point) => { return {x: pt.x * imScale, y: pt.y * imScale}; }
+        );
+    }
+    return transformedPaths;
+  }
+
+  canonicalTextsToImage = (oldTexts: CanvasText[], imScale:number) => {
+    let transformedTexts = JSON.parse(JSON.stringify(oldTexts));
+    transformedTexts = transformedTexts.map( 
+        (item:CanvasText) => { return {...item, position: {x: item.position.x * imScale, y: item.position.y * imScale}}; }
+    );
+    return transformedTexts;
   }
 
   isDrawingMode(): boolean {
@@ -143,15 +166,17 @@ export class ReactSketchCanvas extends React.Component<ReactSketchCanvasProps,
   }
 
   liftUpdatedStateUp(): void {
-    const { currentPaths, currentTexts } = this.state;
+    const { currentPaths, currentTexts, imageScale } = this.state;
     const { onUpdate } = this.props;
 
-    onUpdate(currentPaths, currentTexts);
+    onUpdate(this.canonicalPathsToImage(currentPaths, 1.0 / imageScale), this.canonicalTextsToImage(currentTexts, 1.0 / imageScale));
+    
   }
 
   /* Mouse Handlers - Mouse down, move and up */
 
   handlePointerDown(point: Point): void {
+
     if (!this.isDrawingMode()) {
       
       if (this.state.drawMode === CanvasMode.none) {
@@ -286,6 +311,20 @@ export class ReactSketchCanvas extends React.Component<ReactSketchCanvasProps,
     );
   }
 
+  adjustProportion(imagescale: number, paths: CanvasPath[], texts: CanvasText[]): void {
+    this.resetCanvas(); // reset the canvas
+    this.setState(
+      produce((draft: ReactSketchCanvasStates) => {
+        draft.imageScale = imagescale;
+        draft.currentPaths = this.canonicalPathsToImage(paths, imagescale);
+        draft.currentTexts = this.canonicalTextsToImage(texts, imagescale);
+      }), () => {
+        this.setMode(CanvasMode.pen);
+        this.liftUpdatedStateUp();
+      }
+    );
+  }
+
   clearCanvas(): void {
     this.setState(
       produce((draft: ReactSketchCanvasStates) => {
@@ -375,11 +414,11 @@ export class ReactSketchCanvas extends React.Component<ReactSketchCanvasProps,
   }
 
   exportPaths(): Promise<CanvasPath[]> {
-    const { currentPaths } = this.state;
+    const { currentPaths, imageScale } = this.state;
 
     return new Promise<CanvasPath[]>((resolve, reject) => {
       try {
-        resolve(currentPaths);
+        resolve(this.canonicalPathsToImage(currentPaths, 1.0 / imageScale));
       } catch (e) {
         reject(e);
       }
@@ -387,11 +426,11 @@ export class ReactSketchCanvas extends React.Component<ReactSketchCanvasProps,
   }
 
   exportTexts(): Promise<CanvasText[]> {
-    const { currentTexts } = this.state;
+    const { currentTexts, imageScale } = this.state;
 
     return new Promise<CanvasText[]>((resolve, reject) => {
       try {
-        resolve(currentTexts);
+        resolve(this.canonicalTextsToImage(currentTexts, 1.0 / imageScale));
       } catch (e) {
         reject(e);
       }
@@ -399,6 +438,10 @@ export class ReactSketchCanvas extends React.Component<ReactSketchCanvasProps,
   }
 
   loadPaths(paths: CanvasPath[]): void {
+    
+    const {imageScale} = this.state;
+    paths = this.canonicalPathsToImage(paths, imageScale);
+
     this.setState(
       produce((draft: ReactSketchCanvasStates) => {
         draft.currentPaths = draft.currentPaths.concat(paths);
@@ -408,6 +451,10 @@ export class ReactSketchCanvas extends React.Component<ReactSketchCanvasProps,
   }
 
   loadTexts(texts: CanvasText[]): void {
+
+    const {imageScale} = this.state;
+    texts = this.canonicalTextsToImage(texts, imageScale);
+
     this.setState(
       produce((draft: ReactSketchCanvasStates) => {
         draft.currentTexts = draft.currentTexts.concat(texts);
@@ -432,7 +479,7 @@ export class ReactSketchCanvas extends React.Component<ReactSketchCanvasProps,
     } = this.props;
 
     const { currentPaths, currentTexts, isDrawing } = this.state;
-
+    
     return (
       <Canvas
         ref={this.svgCanvas}

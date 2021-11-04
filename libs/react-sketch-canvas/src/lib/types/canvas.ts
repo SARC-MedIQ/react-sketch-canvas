@@ -26,3 +26,9 @@ export interface CanvasText {
   readonly text: string;
   readonly position: Point;
 }
+
+export interface CanvasProportion {
+  readonly originalHeight: number;
+  readonly bufferHeight: number;
+  readonly innerHeight : number;
+}
