@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { DraggableCore, DraggableData, DraggableEvent } from 'react-draggable';
 import { useOnClickOutside } from '../hooks';
 import { CanvasText } from '../types/canvas';
@@ -6,6 +6,7 @@ import { CanvasText } from '../types/canvas';
 
 export interface SVGTextEditableProps {
   text: CanvasText;
+  texts: CanvasText[];
   onChange?: (oldText: CanvasText, newText: CanvasText) => void;
   isDrawing? : boolean;
 }
@@ -19,6 +20,7 @@ interface Size {
 
 export default function SVGTextEditable({
                                           text,
+                                          texts,
                                           onChange,
                                           isDrawing
                                         }: SVGTextEditableProps) {
@@ -36,9 +38,18 @@ export default function SVGTextEditable({
   const inputRef = useRef<HTMLInputElement>(null);
   useOnClickOutside(inputRef, () => {
     if (isEditing) {
-      rollbackChanges();
+      // rollbackChanges();
+      commitChanges();
     }
   });
+
+  useEffect(() => {
+    const lastTextId = (texts[texts.length - 1]).id;
+    if(text.id === lastTextId && !isDrawing) {
+      // setIsEditing(true);
+      beginEditing();
+    }
+  }, [texts]);
 
   const textRef = useRef<SVGTextElement>(null);
 
@@ -47,7 +58,6 @@ export default function SVGTextEditable({
       setWasDragged(false);
       return;
     }
-    setIsEditing(true);
     if (textRef.current) {
       const size = textRef.current.getBBox();
       const mX = 2;
@@ -60,6 +70,8 @@ export default function SVGTextEditable({
       size.y -= dy / 2;
       setTextSize(size);
     }
+    
+    setIsEditing(true);
   };
 
   const commitChanges = () => {
@@ -115,6 +127,8 @@ export default function SVGTextEditable({
     }
   };
 
+
+
   if (isEditing) {
     return <foreignObject
       x={textSize.x}
@@ -122,7 +136,8 @@ export default function SVGTextEditable({
       width={textSize.width}
       height={textSize.height}
     >
-      <input type='text'
+      <input 
+             type='text'
              ref={inputRef}
              style={{
                width: '100%',

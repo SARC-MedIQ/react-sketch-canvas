@@ -71,7 +71,7 @@ export class ReactSketchCanvas extends React.Component<ReactSketchCanvasProps,
   svgCanvas: React.RefObject<Canvas>;
 
   initialState = {
-    drawMode: CanvasMode.none,
+    drawMode: CanvasMode.pen,
     isDrawing: false,
     // eslint-disable-next-line react/no-unused-state
     resetStack: [],
@@ -494,7 +494,7 @@ export class ReactSketchCanvas extends React.Component<ReactSketchCanvasProps,
         style={style}
         paths={currentPaths}
         texts={currentTexts}
-        isDrawing={isDrawing}
+        isDrawing={this.isDrawingMode()}
         onPointerDown={this.handlePointerDown}
         onPointerMove={this.handlePointerMove}
         onPointerUp={this.handlePointerUp}

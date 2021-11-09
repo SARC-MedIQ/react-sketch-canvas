@@ -12,7 +12,7 @@ interface SVGTextsProps {
 export const SVGTexts = ({ texts, onChange, isDrawing }: SVGTextsProps) => {
   return <>{
     texts.map((text, id) => {
-      return <SVGTextEditable text={text} key={id.toString()} onChange={onChange} isDrawing={isDrawing} />;
+      return <SVGTextEditable texts={texts} text={text} key={id.toString()} onChange={onChange} isDrawing={isDrawing} />;
     })
   }</>;
 };
