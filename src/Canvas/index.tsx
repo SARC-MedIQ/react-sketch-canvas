@@ -56,7 +56,6 @@ export interface CanvasProps {
   canvasColor: string;
   backgroundImage: string;
   exportWithBackgroundImage: boolean;
-  preserveBackgroundImageAspectRatio: string;
   allowOnlyPointerType: string;
   style: React.CSSProperties;
 }
@@ -87,7 +86,6 @@ export const Canvas = React.forwardRef<CanvasRef, CanvasProps>((props, ref) => {
     canvasColor = 'red',
     backgroundImage = '',
     exportWithBackgroundImage = false,
-    preserveBackgroundImageAspectRatio = 'none',
     allowOnlyPointerType = 'all',
     style = {
       border: '0.0625rem solid #9c9c9c',
@@ -390,13 +388,13 @@ release drawing even when point goes out of canvas */
               height="100%"
               patternContentUnits="objectBoundingBox"
               viewBox="0 0 1 1"
-              preserveAspectRatio={preserveBackgroundImageAspectRatio}
+              preserveAspectRatio="none"
             >
               <image
                 xlinkHref={backgroundImage}
                 height="1"
                 width="1"
-                preserveAspectRatio={preserveBackgroundImageAspectRatio}
+                preserveAspectRatio="none"
               />
             </pattern>
           )}

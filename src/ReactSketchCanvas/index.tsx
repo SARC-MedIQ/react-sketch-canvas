@@ -20,7 +20,6 @@ export interface ReactSketchCanvasProps {
   canvasColor?: string;
   backgroundImage?: string;
   exportWithBackgroundImage?: boolean;
-  preserveBackgroundImageAspectRatio: string;
   strokeWidth?: number;
   eraserWidth?: number;
   textSize?: string;
@@ -121,7 +120,6 @@ export const ReactSketchCanvas = React.forwardRef<
     strokeColor = 'red',
     backgroundImage = '',
     exportWithBackgroundImage = false,
-    preserveBackgroundImageAspectRatio = 'none',
     strokeWidth = 4,
     eraserWidth = 8,
     // textSize = '1em',
@@ -510,7 +508,6 @@ export const ReactSketchCanvas = React.forwardRef<
       canvasColor={canvasColor}
       backgroundImage={backgroundImage}
       exportWithBackgroundImage={exportWithBackgroundImage}
-      preserveBackgroundImageAspectRatio={preserveBackgroundImageAspectRatio}
       allowOnlyPointerType={allowOnlyPointerType}
       style={style}
       paths={currentPaths}
