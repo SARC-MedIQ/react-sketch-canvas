@@ -388,13 +388,13 @@ release drawing even when point goes out of canvas */
               height="100%"
               patternContentUnits="objectBoundingBox"
               viewBox="0 0 1 1"
-              preserveAspectRatio="xMidYMid meet"
+              preserveAspectRatio="none"
             >
               <image
                 xlinkHref={backgroundImage}
                 height="1"
                 width="1"
-                preserveAspectRatio="xMidYMid meet"
+                preserveAspectRatio="none"
               />
             </pattern>
           )}
