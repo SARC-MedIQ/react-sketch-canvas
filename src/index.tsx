@@ -1,3 +1,3 @@
-export * from './Canvas';
-export * from './ReactSketchCanvas';
-export * from './types';
+export * from "./Canvas"
+export * from "./ReactSketchCanvas"
+export * from "./types"
