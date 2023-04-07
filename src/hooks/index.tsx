@@ -1,4 +1,4 @@
-import * as React from 'react';
+import * as React from "react"
 
 export function useOnClickOutside<T extends HTMLElement = HTMLElement>(
   ref: React.RefObject<T>,
@@ -6,32 +6,32 @@ export function useOnClickOutside<T extends HTMLElement = HTMLElement>(
 ) {
   React.useEffect(() => {
     const listener = (event: Event) => {
-      const el = ref?.current;
+      const el = ref?.current
 
       // Do nothing if clicking ref's element or descendent elements
       if (!el || el.contains(event.target as Node)) {
-        return;
+        return
       }
 
-      handler(event);
-    };
+      handler(event)
+    }
 
-    document.addEventListener(`mousedown`, listener);
-    document.addEventListener(`touchstart`, listener);
+    document.addEventListener(`mousedown`, listener)
+    document.addEventListener(`touchstart`, listener)
 
     return () => {
-      document.removeEventListener(`mousedown`, listener);
-      document.removeEventListener(`touchstart`, listener);
-    };
+      document.removeEventListener(`mousedown`, listener)
+      document.removeEventListener(`touchstart`, listener)
+    }
 
     // Reload only if ref or handler changes
-  }, [ref, handler]);
+  }, [ref, handler])
 }
 
 export function usePrevious<T>(value: T): T | undefined {
-  const ref = React.useRef<T>();
+  const ref = React.useRef<T>()
   React.useEffect(() => {
-    ref.current = value;
-  }, [value]);
-  return ref.current;
+    ref.current = value
+  }, [value])
+  return ref.current
 }
