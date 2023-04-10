@@ -1,11 +1,11 @@
-import * as React from 'react';
-import { CanvasText } from '../types';
-import SVGTextEditable from './SVGTextEditable';
+import * as React from "react"
+import { CanvasText } from "../types"
+import SVGTextEditable from "./SVGTextEditable"
 
 interface SVGTextsProps {
-  texts: CanvasText[];
-  onChange?: (oldText: CanvasText, newText: CanvasText) => void;
-  isDrawing?: boolean;
+  texts: CanvasText[]
+  onChange?: (oldText: CanvasText, newText: CanvasText) => void
+  isDrawing?: boolean
 }
 
 export const SVGTexts = ({ texts, onChange, isDrawing }: SVGTextsProps) => {
@@ -20,5 +20,5 @@ export const SVGTexts = ({ texts, onChange, isDrawing }: SVGTextsProps) => {
         />
       ))}
     </>
-  );
-};
+  )
+}

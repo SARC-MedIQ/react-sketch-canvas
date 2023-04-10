@@ -1,19 +1,19 @@
-import * as React from 'react';
-import { CanvasPath, Point } from '../types';
+import * as React from "react"
+import { CanvasPath, Point } from "../types"
 
 export type SvgPathProps = {
   // List of points to create the stroke
-  paths: Point[];
+  paths: Point[]
   // Unique ID
-  id: string;
+  id: string
   // Width of the stroke
-  strokeWidth: number | string;
+  strokeWidth: number | string
   // Color of the stroke
-  strokeColor: string;
+  strokeColor: string
   // Bezier command to smoothen the line
-  command?: (point: Point, i: number, a: Point[]) => string;
-  onClick?: (id: string) => void;
-};
+  command?: (point: Point, i: number, a: Point[]) => string
+  onClick?: (id: string) => void
+}
 
 /**
  * Generate SVG Path tag from the given points
@@ -26,11 +26,11 @@ export const SvgPath = ({
   command = bezierCommand,
   onClick = undefined,
 }: SvgPathProps): JSX.Element => {
-  const areaMargin = 10; // px
+  const areaMargin = 10 // px
 
   if (paths.length === 1) {
-    const { x, y } = paths[0];
-    const radius = parseInt(strokeWidth.toString(), 10) / 2;
+    const { x, y } = paths[0]
+    const radius = parseInt(strokeWidth.toString(), 10) / 2
 
     const elem = (
       <circle
@@ -42,7 +42,7 @@ export const SvgPath = ({
         stroke={strokeColor}
         fill={strokeColor}
       />
-    );
+    )
     if (onClick) {
       return (
         <>
@@ -58,16 +58,16 @@ export const SvgPath = ({
             onClick={() => onClick(id)}
           />
         </>
-      );
+      )
     }
-    return elem;
+    return elem
   }
 
   const d = paths.reduce(
     (acc, point, i, a) =>
       i === 0 ? `M ${point.x},${point.y}` : `${acc} ${command(point, i, a)}`,
-    ''
-  );
+    ""
+  )
 
   const elem = (
     <path
@@ -79,7 +79,7 @@ export const SvgPath = ({
       stroke={strokeColor}
       strokeWidth={strokeWidth}
     />
-  );
+  )
   if (onClick) {
     return (
       <>
@@ -95,70 +95,70 @@ export const SvgPath = ({
           onClick={() => onClick(id)}
         />
       </>
-    );
+    )
   }
-  return elem;
-};
+  return elem
+}
 
 export const line = (pointA: Point, pointB: Point) => {
-  const lengthX = pointB.x - pointA.x;
-  const lengthY = pointB.y - pointA.y;
+  const lengthX = pointB.x - pointA.x
+  const lengthY = pointB.y - pointA.y
 
   return {
     length: Math.sqrt(lengthX ** 2 + lengthY ** 2),
     angle: Math.atan2(lengthY, lengthX),
-  };
-};
+  }
+}
 
 type ControlPoints = {
-  current: Point;
-  previous?: Point;
-  next?: Point;
-  reverse?: boolean;
-};
+  current: Point
+  previous?: Point
+  next?: Point
+  reverse?: boolean
+}
 
 const controlPoint = (controlPoints: ControlPoints): [number, number] => {
-  const { current, next, previous, reverse } = controlPoints;
+  const { current, next, previous, reverse } = controlPoints
 
-  const p = previous || current;
-  const n = next || current;
+  const p = previous || current
+  const n = next || current
 
-  const smoothing = 0.2;
+  const smoothing = 0.2
 
-  const o = line(p, n);
+  const o = line(p, n)
 
-  const angle = o.angle + (reverse ? Math.PI : 0);
-  const length = o.length * smoothing;
+  const angle = o.angle + (reverse ? Math.PI : 0)
+  const length = o.length * smoothing
 
-  const x = current.x + Math.cos(angle) * length;
-  const y = current.y + Math.sin(angle) * length;
+  const x = current.x + Math.cos(angle) * length
+  const y = current.y + Math.sin(angle) * length
 
-  return [x, y];
-};
+  return [x, y]
+}
 
 export const bezierCommand = (point: Point, i: number, a: Point[]): string => {
-  let cpsX = null;
-  let cpsY = null;
+  let cpsX = null
+  let cpsY = null
 
   switch (i) {
     case 0:
-      [cpsX, cpsY] = controlPoint({
+      ;[cpsX, cpsY] = controlPoint({
         current: point,
-      });
-      break;
+      })
+      break
     case 1:
-      [cpsX, cpsY] = controlPoint({
+      ;[cpsX, cpsY] = controlPoint({
         current: a[i - 1],
         next: point,
-      });
-      break;
+      })
+      break
     default:
-      [cpsX, cpsY] = controlPoint({
+      ;[cpsX, cpsY] = controlPoint({
         current: a[i - 1],
         previous: a[i - 2],
         next: point,
-      });
-      break;
+      })
+      break
   }
 
   const [cpeX, cpeY] = controlPoint({
@@ -166,15 +166,15 @@ export const bezierCommand = (point: Point, i: number, a: Point[]): string => {
     previous: a[i - 1],
     next: a[i + 1],
     reverse: true,
-  });
+  })
 
-  return `C ${cpsX},${cpsY} ${cpeX},${cpeY} ${point.x}, ${point.y}`;
-};
+  return `C ${cpsX},${cpsY} ${cpeX},${cpeY} ${point.x}, ${point.y}`
+}
 
 type PathProps = {
-  paths: CanvasPath[];
-  onClick?: (id: string) => void;
-};
+  paths: CanvasPath[]
+  onClick?: (id: string) => void
+}
 
 const Paths = ({ paths, onClick }: PathProps): JSX.Element => (
   <React.Fragment>
@@ -186,10 +186,10 @@ const Paths = ({ paths, onClick }: PathProps): JSX.Element => (
         strokeWidth={path.strokeWidth}
         strokeColor={path.strokeColor}
         command={bezierCommand}
-        onClick={(id) => onClick && onClick(id) }
+        onClick={(id) => onClick && onClick(id)}
       />
     ))}
   </React.Fragment>
-);
+)
 
-export default Paths;
+export default Paths
