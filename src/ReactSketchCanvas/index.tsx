@@ -325,7 +325,9 @@ export const ReactSketchCanvas = React.forwardRef<
       return exportSvg()
     },
     exportPaths: (): CanvasPath[] => currentPaths,
-    exportTexts: (): CanvasText[] => currentTexts,
+    exportTexts: (): CanvasText[] => {
+      return [...currentTexts]
+    },
     exportPathsPromise: (): Promise<CanvasPath[]> => {
       return new Promise<CanvasPath[]>((resolve, reject) => {
         try {
@@ -477,13 +479,7 @@ export const ReactSketchCanvas = React.forwardRef<
 
   const handleTextChange = (oldText: CanvasText, newText: CanvasText): void => {
     setCurrentTexts((texts) => {
-      for (const idx in texts) {
-        if (currentTexts[idx].id === oldText.id) {
-          currentTexts[idx] = newText
-          break
-        }
-      }
-      return texts
+      return texts.map((t) => (t.id === oldText.id ? newText : t))
     })
     onChange(currentPaths, currentTexts)
   }
