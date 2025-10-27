@@ -149,7 +149,8 @@ export const ReactSketchCanvas = React.forwardRef<
     return drawMode === CanvasMode.pen || drawMode === CanvasMode.eraser
   }
 
-  const liftUpdatedStateUp = React.useCallback((paths: CanvasPath[]): void => {
+  const liftUpdatedStateUp = React.useCallback(
+    (paths: CanvasPath[]): void => {
       const lastStroke = paths.slice(-1)?.[0] ?? null
 
       if (lastStroke === null) {
@@ -243,9 +244,14 @@ export const ReactSketchCanvas = React.forwardRef<
     }
   }
 
-  const loadTexts = (texts: CanvasText[], fromSize?: Size, toSize?: Size): void => {
+  const loadTexts = (
+    texts: CanvasText[],
+    fromSize?: Size,
+    toSize?: Size
+  ): void => {
     if (fromSize) {
-      const targetSize = toSize ?? currentSizeRef.current ?? svgCanvas.current?.size
+      const targetSize =
+        toSize ?? currentSizeRef.current ?? svgCanvas.current?.size
       if (targetSize) {
         texts = scaleTexts(texts, fromSize, targetSize)
         currentSizeRef.current = targetSize
