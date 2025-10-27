@@ -29,6 +29,7 @@ export interface ReactSketchCanvasProps {
   onStroke?: (path: CanvasPath, isEraser: boolean) => void
   style?: React.CSSProperties
   withTimestamp?: boolean
+  referenceSize?: Size // Reference dimensions that addPath coordinates are based on
 }
 
 export interface ReactSketchCanvasRef {
@@ -122,7 +123,6 @@ export const ReactSketchCanvas = React.forwardRef<
     exportWithBackgroundImage = false,
     strokeWidth = 4,
     eraserWidth = 8,
-    // textSize = '1em',
     allowOnlyPointerType = "all",
     style = {
       border: "0.0625rem solid #9c9c9c",
@@ -132,6 +132,7 @@ export const ReactSketchCanvas = React.forwardRef<
     onChange = (_paths: CanvasPath[], _texts: CanvasText[]): void => undefined,
     onStroke = (_path: CanvasPath, _isEraser: boolean): void => undefined,
     withTimestamp = false,
+    referenceSize = undefined,
   } = props
 
   const svgCanvas = React.createRef<CanvasRef>()
@@ -148,28 +149,40 @@ export const ReactSketchCanvas = React.forwardRef<
     return drawMode === CanvasMode.pen || drawMode === CanvasMode.eraser
   }
 
-  const liftUpdatedStateUp = React.useCallback((): void => {
-    const lastStroke = currentPaths.slice(-1)?.[0] ?? null
+  const liftUpdatedStateUp = React.useCallback(
+    (paths: CanvasPath[]): void => {
+      const lastStroke = paths.slice(-1)?.[0] ?? null
 
-    if (lastStroke === null) {
-      return
-    }
+      if (lastStroke === null) {
+        return
+      }
 
-    onStroke(lastStroke, lastStroke.drawMode === CanvasMode.eraser)
-    // we want to run it whenever `isDrawing` changes
-  }, [currentPaths, onStroke])
+      onStroke(lastStroke, lastStroke.drawMode === CanvasMode.eraser)
+    },
+    [onStroke]
+  )
 
   React.useEffect(() => {
-    liftUpdatedStateUp()
+    if (!isDrawing) {
+      liftUpdatedStateUp(currentPaths)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDrawing])
+
+  // Call onChange when paths or texts change (outside of render cycle)
+  React.useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      onChange(currentPaths, currentTexts)
+    }, 0)
+
+    return () => clearTimeout(timeoutId)
+  }, [currentPaths, currentTexts, onChange])
 
   const resetCanvas = () => {
     setResetStack([])
     setUndoStack([])
     setCurrentPaths([])
     setCurrentTexts([])
-    onChange(currentPaths, currentTexts)
   }
 
   const currentSizeRef = React.useRef<Size | undefined>()
@@ -198,14 +211,19 @@ export const ReactSketchCanvas = React.forwardRef<
     setCurrentTexts((texts) => scaleTexts(texts, currentSize, newSize))
   }
 
-  const loadPaths = (paths: CanvasPath[], size?: Size): void => {
-    if (size) {
-      const newSize = currentSizeRef.current ?? svgCanvas.current?.size
-      if (newSize) {
-        paths = scalePaths(paths, size, newSize)
-        currentSizeRef.current = newSize
+  const loadPaths = (
+    paths: CanvasPath[],
+    fromSize?: Size,
+    toSize?: Size
+  ): void => {
+    if (fromSize) {
+      const targetSize =
+        toSize ?? currentSizeRef.current ?? svgCanvas.current?.size
+      if (targetSize) {
+        paths = scalePaths(paths, fromSize, targetSize)
+        currentSizeRef.current = targetSize
       } else {
-        console.error("Cannot determine new size.")
+        console.error("Cannot determine target size for scaling.")
         return
       }
     }
@@ -226,17 +244,62 @@ export const ReactSketchCanvas = React.forwardRef<
     }
   }
 
-  const loadTexts = (texts: CanvasText[], size?: Size): void => {
-    if (size) {
-      const newSize = currentSizeRef.current ?? svgCanvas.current?.size
-      if (newSize) {
-        texts = scaleTexts(texts, size, newSize)
+  const loadTexts = (
+    texts: CanvasText[],
+    fromSize?: Size,
+    toSize?: Size
+  ): void => {
+    if (fromSize) {
+      const targetSize =
+        toSize ?? currentSizeRef.current ?? svgCanvas.current?.size
+      if (targetSize) {
+        texts = scaleTexts(texts, fromSize, targetSize)
+        currentSizeRef.current = targetSize
       } else {
-        console.error("Cannot determine new size.")
+        console.error("Cannot determine target size for scaling.")
         return
       }
     }
     setCurrentTexts((currentTexts) => [...currentTexts, ...texts])
+  }
+
+  // Helper function to get current canvas size and reference dimensions
+  const getCanvasDimensions = (
+    callback: (
+      currentSize: Size | undefined,
+      refDimensions: Size | undefined
+    ) => void
+  ): void => {
+    requestAnimationFrame(() => {
+      // Force layout recalculation and get canvas size directly from DOM
+      const canvasElement = document.getElementById(id)
+
+      let currentCanvasSize: Size | undefined
+
+      if (canvasElement) {
+        // Force layout recalculation
+        void canvasElement.offsetHeight
+        void canvasElement.offsetWidth
+
+        // Get size directly from DOM element
+        currentCanvasSize = {
+          width: canvasElement.clientWidth,
+          height: canvasElement.clientHeight,
+        }
+      }
+
+      // Fallback to ref-based size getter
+      if (!currentCanvasSize || currentCanvasSize.width === 0) {
+        currentCanvasSize = svgCanvas.current?.size
+      }
+
+      const backgroundImageSize = svgCanvas.current?.backgroundImageSize
+
+      // Use referenceSize prop if provided, otherwise fall back to backgroundImageSize
+      const referenceDimensions = referenceSize || backgroundImageSize
+
+      callback(currentCanvasSize, referenceDimensions)
+    })
   }
 
   React.useImperativeHandle(ref, () => ({
@@ -264,49 +327,47 @@ export const ReactSketchCanvas = React.forwardRef<
       setResetStack([...currentPaths])
       setCurrentPaths([])
       setCurrentTexts([])
-      onChange(currentPaths, currentTexts)
     },
     undo: (): void => {
-      // If there was a last reset then
       if (resetStack.length !== 0) {
         setCurrentPaths([...resetStack])
         setResetStack([])
-        onChange(currentPaths, currentTexts)
         return
       }
 
-      setUndoStack((undoStack) => [...undoStack, ...currentPaths.slice(-1)])
-      setCurrentPaths((currentPaths) => currentPaths.slice(0, -1))
-      onChange(currentPaths, currentTexts)
+      const pathToUndo = currentPaths.slice(-1)
+      const updatedPaths = currentPaths.slice(0, -1)
+      setUndoStack((undoStack) => [...undoStack, ...pathToUndo])
+      setCurrentPaths(updatedPaths)
     },
     redo: (): void => {
-      // Nothing to Redo
       if (undoStack.length === 0) return
 
-      setCurrentPaths((currentPaths) => [
-        ...currentPaths,
-        ...undoStack.slice(-1),
-      ])
+      const pathToRedo = undoStack.slice(-1)
+      const updatedPaths = [...currentPaths, ...pathToRedo]
+      setCurrentPaths(updatedPaths)
       setUndoStack((undoStack) => undoStack.slice(0, -1))
-      onChange(currentPaths, currentTexts)
     },
     addText: (text, position) => {
-      const texts: CanvasText[] = [createText(text, position)]
-      loadTexts(texts, svgCanvas.current?.backgroundImageSize)
-      onChange(currentPaths, currentTexts)
+      getCanvasDimensions((currentCanvasSize, referenceDimensions) => {
+        const texts: CanvasText[] = [createText(text, position)]
+        loadTexts(texts, referenceDimensions, currentCanvasSize)
+      })
     },
     addPath: (points, width, color) => {
-      const paths: CanvasPath[] = [
-        {
-          paths: points,
-          drawMode: CanvasMode.pen,
-          strokeColor: color,
-          strokeWidth: width,
-          id: getId(),
-        },
-      ]
-      loadPaths(paths, svgCanvas.current?.backgroundImageSize)
-      onChange(currentPaths, currentTexts)
+      getCanvasDimensions((currentCanvasSize, referenceDimensions) => {
+        const paths: CanvasPath[] = [
+          {
+            paths: points,
+            drawMode: CanvasMode.pen,
+            strokeColor: color,
+            strokeWidth: width,
+            id: getId(),
+          },
+        ]
+
+        loadPaths(paths, referenceDimensions, currentCanvasSize)
+      })
     },
     exportImage: (imageType: ExportImageType): Promise<string> => {
       const exportImage = svgCanvas.current?.exportImage
@@ -347,12 +408,10 @@ export const ReactSketchCanvas = React.forwardRef<
       })
     },
     loadPaths: (paths: CanvasPath[], size?: Size): void => {
-      loadPaths(paths, size)
-      onChange(currentPaths, currentTexts)
+      loadPaths(paths, size, undefined)
     },
     loadTexts: (texts: CanvasText[], size?: Size): void => {
-      loadTexts(texts, size)
-      onChange(currentPaths, currentTexts)
+      loadTexts(texts, size, undefined)
     },
     getSketchingTime: (): Promise<number> => {
       return new Promise<number>((resolve, reject) => {
@@ -392,7 +451,6 @@ export const ReactSketchCanvas = React.forwardRef<
     }
     setUndoStack((undoStack) => [...undoStack, path])
     setCurrentPaths((paths) => paths.filter((p) => p.id !== path.id))
-    onChange(currentPaths, currentTexts)
   }
 
   const handlePointerDown = (point: Point): void => {
@@ -474,14 +532,12 @@ export const ReactSketchCanvas = React.forwardRef<
       ...currentPaths.slice(0, -1),
       updatedStroke,
     ])
-    onChange(currentPaths, currentTexts)
   }
 
   const handleTextChange = (oldText: CanvasText, newText: CanvasText): void => {
-    setCurrentTexts((texts) => {
-      return texts.map((t) => (t.id === oldText.id ? newText : t))
-    })
-    onChange(currentPaths, currentTexts)
+    setCurrentTexts((texts) =>
+      texts.map((t) => (t.id === oldText.id ? newText : t))
+    )
   }
 
   return (
